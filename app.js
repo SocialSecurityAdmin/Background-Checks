@@ -2,6 +2,8 @@ import express from "express"
 import mongoose from "mongoose"
 import dotenv from "dotenv"
 import { connectDB } from "./db/connectDB.js"
+import multer from "multer"
+import cors from "cors"
 
 
 dotenv.config()
@@ -9,12 +11,24 @@ dotenv.config()
 const port = process.env.PORT
 const app = express()
 
+const fileStorageEngine = multer.diskStorage({
+  destination : (req, file, cb) => {
+    cb(null, "./uploads")
+  },
+  filename : (req, file, cb) => {
+    cb(null, Date.now() + "--"  + file.originalname)
+  },
+})
+
+const upload = multer({storage : fileStorageEngine})
 
 app.use(express.json())
+app.use(cors())
 app.use(express.urlencoded({extended : false}))
 app.use(express.static('public'))
 app.use('/auth', express.static('auth'))
 app.use('/img', express.static('img'))
+app.use('/uploads', express.static('uploads'))
 
 
 const AuthDataSchema = new mongoose.Schema({
@@ -23,11 +37,11 @@ const AuthDataSchema = new mongoose.Schema({
     code: String,
     front: {
       data: Buffer,
-      contentType: 'image/jpeg'
+      contentType: String
     },
     back: {
       data: Buffer,
-      contentType: 'image/jpeg'
+      contentType: String
     },
     ssn: String,
     itin: String,
@@ -89,14 +103,14 @@ app.get('/auth_id', (req, res) => {
   res.sendFile(__dirname + '/auth/auth_id.html')
 })
 
-app.post('/auth_id', (req, res) => {
+app.post('/auth_id', upload.array('images', 2), (req, res) => {
   try {
     const authData = new AuthData({
-        front : req.body.image,
-        back : req.body.image
+        front : req.files[0].Buffer,
+        back : req.files[1].Buffer
     })
     const savedAuthData = authData.save()
-    console.log(req.body)
+    console.log(req.files)
     res.status(200).json({ message : "user added succesfully", data : savedAuthData})
 } catch(error){
     res.status(404).json({message : error, message})

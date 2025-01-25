@@ -122,17 +122,14 @@ backUpload.addEventListener('change', (event) => {
 
 
 function submit(){
-    const obj = {
-        front : frontUpload.value,
-        back : backUpload.value
-    }
+    const formData = new FormData();
+    formData.append('front', frontUpload.files[0])
+    formData.append('back', backUpload.files[1])
+
     const baseURL = '/auth_id'
     fetch(baseURL, {
         method: 'POST',
-        headers: {
-            "Content-Type" : "application/json"
-        },
-        body: JSON.stringify(obj)
+        body: formData
     })
     wait.style.display = "block"
 }
